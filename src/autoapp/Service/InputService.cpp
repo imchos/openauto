@@ -166,6 +166,7 @@ void InputService::onButtonEvent(const projection::ButtonEvent& event)
 
 void InputService::onTouchEvent(const projection::TouchEvent& event)
 {
+    //OPENAUTO_LOG(debug) << "[InputService] onTouchEvent";
     auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
 
     strand_.dispatch([this, self = this->shared_from_this(), event = std::move(event), timestamp = std::move(timestamp)]() {
@@ -182,6 +183,7 @@ void InputService::onTouchEvent(const projection::TouchEvent& event)
         auto promise = aasdk::channel::SendPromise::defer(strand_);
         promise->then([]() {}, std::bind(&InputService::onChannelError, this->shared_from_this(), std::placeholders::_1));
         channel_->sendInputEventIndication(inputEventIndication, std::move(promise));
+        //OPENAUTO_LOG(debug) << "[InputService] sendInputEventIndication";
     });
 }
 

@@ -227,6 +227,17 @@ void AndroidAutoEntity::onNavigationFocusRequest(const aasdk::proto::messages::N
     controlServiceChannel_->receive(this->shared_from_this());
 }
 
+void AndroidAutoEntity::onPingRequest(const aasdk::proto::messages::PingRequest& request)
+{
+    aasdk::proto::messages::PingResponse response;
+    response.set_timestamp(request.timestamp());
+    auto promise = aasdk::channel::SendPromise::defer(strand_);
+    promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
+
+    controlServiceChannel_->sendPingResponse(response, std::move(promise));
+    controlServiceChannel_->receive(this->shared_from_this());
+}
+
 void AndroidAutoEntity::onPingResponse(const aasdk::proto::messages::PingResponse&)
 {
     pinger_->pong();
@@ -259,7 +270,7 @@ void AndroidAutoEntity::schedulePing()
            error != aasdk::error::ErrorCode::OPERATION_IN_PROGRESS)
         {
             OPENAUTO_LOG(error) << "[AndroidAutoEntity] ping timer exceeded.";
-            this->triggerQuit();
+            //this->triggerQuit();
         }
     });
 
@@ -272,6 +283,8 @@ void AndroidAutoEntity::sendPing()
     promise->then([]() {}, std::bind(&AndroidAutoEntity::onChannelError, this->shared_from_this(), std::placeholders::_1));
 
     aasdk::proto::messages::PingRequest request;
+    auto timestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+    request.set_timestamp(timestamp.count());
     controlServiceChannel_->sendPingRequest(request, std::move(promise));
 }
 
